@@ -418,6 +418,8 @@ static void bind_to_free_cpu(void) {
   u8 cpu_used[4096] = { 0 };
   u32 i;
 
+  char * proc_path = "/proc";
+
   if (cpu_core_count < 2) return;
 
   if (getenv("AFL_NO_AFFINITY")) {
@@ -427,7 +429,13 @@ static void bind_to_free_cpu(void) {
 
   }
 
-  d = opendir("/proc");
+  if (getenv("AFL_PROC_PATH")) {
+
+    WARNF("Customized proc path detected (AFL_PROC_PATH set).");
+    proc_path = getenv("AFL_PROC_PATH");
+  }
+
+  d = opendir(proc_path);
 
   if (!d) {
 
@@ -457,7 +465,7 @@ static void bind_to_free_cpu(void) {
 
     if (!isdigit(de->d_name[0])) continue;
 
-    fn = alloc_printf("/proc/%s/status", de->d_name);
+    fn = alloc_printf("%s/%s/status", proc_path, de->d_name);
 
     if (!(f = fopen(fn, "r"))) {
       ck_free(fn);
